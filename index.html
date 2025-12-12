@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共享音乐空间 - 登录版</title>
+    <!-- SEO优化 -->
+    <meta name="description" content="共享音乐空间，支持用户登录、上传音乐、权限控制、防盗链保护，安全可靠的多人音乐共享平台">
+    <meta name="keywords" content="共享音乐,用户登录,权限控制,防盗链,音乐上传,在线音乐播放">
+    <meta name="robots" content="index, follow">
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 自定义Tailwind配置 -->
+    <script>
+        tailwind.config = {  
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#1f2937',
+                        accent: '#f472b6',
+                        success: '#10b981',
+                        error: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#3b82f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .music-progress::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: theme('colors.accent');
+                cursor: pointer;
+            }
+            .drop-area-active {
+                border-color: theme('colors.primary') !important;
+                background-color: theme('colors.primary/10') !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-secondary text-white min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <nav class="bg-secondary/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-700">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-music text-accent text-2xl"></i>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    共享音乐空间
+                </h1>
+            </div>
+            
+            <!-- 登录状态显示 -->
+            <div class="flex items-center gap-4">
+                <div id="user-info" class="hidden items-center gap-2 text-sm">
+                    <span class="text-gray-300">欢迎，<span id="nickname" class="text-accent"></span></span>
+                    <button id="logout-btn" class="text-gray-400 hover:text-accent transition-colors">
+                        <i class="fa-solid fa-sign-out-alt"></i> 退出
+                    </button>
+                </div>
+                <div id="auth-buttons" class="flex items-center gap-3">
+                    <button id="login-btn" class="text-gray-300 hover:text-accent transition-colors">登录</button>
+                    <button id="register-btn" class="bg-primary/80 hover:bg-primary text-white px-3 py-1 rounded-lg transition-colors">注册</button>
+                </div>
+            </div>
+            
+            <!-- 移动端菜单 -->
+            <button id="mobile-menu-btn" class="md:hidden text-gray-300 hover:text-accent">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- 移动端菜单内容 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-secondary/95 border-b border-gray-700">
+            <div class="container mx-auto px-4 py-2 flex flex-col gap-3">
+                <a href="#home" class="nav-link py-2 text-accent font-medium">首页</a>
+                <a href="#music" class="nav-link py-2 text-gray-300 hover:text-accent transition-colors">音乐库</a>
+                <a href="#about" class="nav-link py-2 text-gray-300 hover:text-accent transition-colors">关于</a>
+                <div id="mobile-user-info" class="hidden py-2 border-t border-gray-700 mt-2">
+                    <span class="text-gray-300">欢迎，<span id="mobile-nickname" class="text-accent"></span></span>
+                    <button id="mobile-logout-btn" class="mt-2 text-gray-400 hover:text-accent transition-colors">
+                        <i class="fa-solid fa-sign-out-alt"></i> 退出登录
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 登录/注册模态框 -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/70 flex justify-center items-center z-50 hidden">
+        <div class="bg-secondary rounded-lg w-full max-w-md p-6 border border-gray-700">
+            <!-- 模态框标题 -->
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modal-title" class="text-xl font-bold text-accent">用户登录</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- 登录/注册切换 -->
+            <div class="flex mb-6 border-b border-gray-700">
+                <button id="tab-login" class="py-2 px-4 text-accent border-b-2 border-accent">登录</button>
+                <button id="tab-register" class="py-2 px-4 text-gray-400 hover:text-white transition-colors">注册</button>
+            </div>
+            
+            <!-- 登录表单 -->
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-gray-300 mb-2">用户名</label>
+                    <input type="text" id="login-username" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" placeholder="请输入用户名" required>
+                </div>
+                <div>
+                    <label class="block text-gray-300 mb-2">密码</label>
+                    <input type="password" id="login-password" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-primary/80 text-white py-2 rounded-lg transition-colors">
+                    登录
+                </button>
+            </form>
+            
+            <!-- 注册表单（默认隐藏） -->
+            <form id="register-form" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-gray-300 mb-2">用户名</label>
+                    <input type="text" id="register-username" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" placeholder="请输入用户名" required>
+                </div>
+                <div>
+                    <label class="block text-gray-300 mb-2">密码</label>
+                    <input type="password" id="register-password" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" placeholder="请输入密码（至少6位）" minlength="6" required>
+                </div>
+                <div>
+                    <label class="block text-gray-300 mb-2">昵称</label>
+                    <input type="text" id="register-nickname" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-accent" placeholder="请输入昵称（选填）">
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-primary/80 text-white py-2 rounded-lg transition-colors">
+                    注册
+                </button>
+            </form>
+            
+            <!-- 表单提示 -->
+            <div id="auth-alert" class="mt-4 p-3 rounded-lg hidden"></div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading-indicator" class="fixed top-0 left-0 w-full h-full bg-secondary/80 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent mx-auto mb-4"></div>
+            <p class="text-gray-300" id="loading-text">加载中...</p>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- 首页 -->
+        <section id="home" class="min-h-[70vh] flex flex-col justify-center items-center text-center">
+            <h2 class="text-[clamp(2rem,5vw,4rem)] font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                共享音乐，安全可控
+            </h2>
+            <p class="text-gray-300 text-[clamp(1rem,2vw,1.25rem)] max-w-2xl mb-8">
+                登录后上传你的音乐，仅你可删除自己上传的内容！
+                内置防盗链、接口限流、操作日志，保障音乐安全和服务稳定。
+            </p>
+            <a href="#music" class="bg-primary hover:bg-primary/80 text-white px-8 py-3 rounded-full font-medium transition-all hover:scale-105 shadow-lg shadow-primary/20">
+                进入共享音乐库 <i class="fa-solid fa-arrow-right ml-2"></i>
+            </a>
+        </section>
+
+        <!-- 音乐库（核心功能区） -->
+        <section id="music" class="py-16 hidden">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-8 text-accent">共享音乐库</h2>
+                
+                <!-- 未登录提示 -->
+                <div id="not-login-tip" class="bg-warning/20 border border-warning rounded-lg p-4 mb-8">
+                    <i class="fa-solid fa-exclamation-triangle mr-2"></i>
+                    <span>请先登录后上传音乐，登录后可管理自己上传的内容</span>
+                </div>
+                
+                <!-- 上传区域（登录后显示） -->
+                <div id="upload-area" class="bg-gray-800/50 rounded-lg p-8 mb-8 hidden">
+                    <div id="upload-alert" class="mb-4 p-3 rounded-lg hidden"></div>
+                    
+                    <!-- 拖放上传 -->
+                    <div id="drop-area" class="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center mb-6 hover:border-primary/50 transition-colors">
+                        <i class="fa-solid fa-cloud-upload text-4xl text-gray-500 mb-4"></i>
+                        <h3 class="text-lg font-medium mb-2">拖放音乐文件到此处</h3>
+                        <p class="text-gray-400 mb-4">支持 MP3、WAV、FLAC、AAC、OGG，单文件最大 100MB</p>
+                        <label for="music-upload" class="cursor-pointer bg-primary hover:bg-primary/80 text-white px-6 py-3 rounded-lg transition-colors inline-block">
+                            <i class="fa-solid fa-folder-open mr-2"></i> 选择本地音乐
+                        </label>
+                        <input type="file" id="music-upload" class="hidden" accept="audio/*">
+                    </div>
+                    
+                    <!-- 上传进度 -->
+                    <div id="upload-progress" class="hidden mb-4">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-400">上传进度</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-700 rounded-lg overflow-hidden">
+                            <div id="progress-bar-fill" class="h-full bg-accent w-0 transition-all"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 音乐列表 -->
+                <div class="bg-gray-800/50 rounded-lg mb-8">
+                    <div class="p-4 border-b border-gray-700 font-medium flex justify-between items-center">
+                        <span>所有用户上传的音乐</span>
+                        <span id="track-count" class="text-sm text-gray-400">共 0 首音乐</span>
+                    </div>
+                    <div id="music-list" class="max-h-80 overflow-y-auto scrollbar-hide divide-y divide-gray-700">
+                        <div class="p-8 text-center text-gray-500">
+                            <i class="fa-solid fa-music text-4xl mb-4 block"></i>
+                            暂无共享音乐，快来上传第一首吧！
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 播放控制 -->
+                <div class="bg-gray-800/50 rounded-lg p-6">
+                    <div id="player-info" class="mb-4">
+                        <h3 id="current-track" class="text-lg font-medium text-accent">未播放音乐</h3>
+                        <p id="track-uploader" class="text-xs text-gray-400 mb-1 hidden">上传者：匿名用户</p>
+                        <p id="track-duration" class="text-gray-400 text-sm">00:00 / 00:00</p>
+                        <p id="progress-hint" class="text-xs text-gray-500 mt-1 hidden">
+                            <i class="fa-solid fa-clock-rotate-left"></i> 将从上次播放位置继续
+                        </p>
+                    </div>
+                    
+                    <!-- 进度条 -->
+                    <div class="mb-6">
+                        <input type="range" id="play-progress-bar" class="music-progress w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" min="0" max="100" value="0">
+                    </div>
+                    
+                    <!-- 控制按钮 -->
+                    <div class="flex justify-center items-center gap-8">
+                        <button id="prev-track" class="text-gray-400 hover:text-accent transition-colors text-2xl">
+                            <i class="fa-solid fa-backward"></i>
+                        </button>
+                        <button id="play-pause" class="bg-accent hover:bg-accent/80 text-white w-16 h-16 rounded-full flex items-center justify-center transition-colors text-2xl shadow-lg shadow-accent/20">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <button id="next-track" class="text-gray-400 hover:text-accent transition-colors text-2xl">
+                            <i class="fa-solid fa-forward"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 音量控制 -->
+                    <div class="mt-6 flex items-center gap-3">
+                        <i class="fa-solid fa-volume-high text-gray-400"></i>
+                        <input type="range" id="volume-control" class="music-progress w-32 h-2 bg-gray-700 rounded-lg appearance-none" min="0" max="1" step="0.01" value="1">
+                        <span id="volume-text" class="text-xs text-gray-400">100%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 关于页面 -->
+        <section id="about" class="py-16 hidden">
+            <div class="max-w-4xl mx-auto bg-gray-800/50 rounded-lg p-8">
+                <h2 class="text-3xl font-bold mb-6 text-accent">关于共享音乐空间</h2>
+                <div class="space-y-4 text-gray-300">
+                    <p>
+                        这是一个带完整权限控制的多人共享音乐空间，核心安全特性：
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li><strong>用户认证</strong>：基于JWT的登录认证，保障操作安全</li>
+                        <li><strong>权限控制</strong>：仅允许删除自己上传的音乐</li>
+                        <li><strong>防盗链保护</strong>：验证Referer，防止音乐文件被盗链</li>
+                        <li><strong>接口限流</strong>：限制请求频率，防止恶意攻击</li>
+                        <li><strong>日志审计</strong>：完整记录所有操作，便于追溯</li>
+                    </ul>
+                    <p class="text-warning">
+                        注意：请勿上传侵权、违规的音乐文件，所有上传内容仅用于学习交流。
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-secondary/90 border-t border-gray-700 py-3">
+        <div class="container mx-auto px-4 text-center text-gray-400 text-sm">
+            <p>© 2025 共享音乐空间 - 安全可控的多人音乐共享平台</p>
+        </div>
+    </footer>
+
+    <!-- 音频元素 -->
+    <audio id="audio-player" preload="metadata"></audio>
+
+    <script>
+        // 配置
+        const API_BASE_URL = 'http://localhost:3000/api';
+        // 全局状态
+        let isLoggedIn = false;
+        let currentUser = null;
+        let token = localStorage.getItem('music_token');
+        let musicList = [];
+        let currentTrackIndex = -1;
+        let isPlaying = false;
+        let progressSaveTimer = null;
+
+        // DOM元素
+        const audioPlayer = document.getElementById('audio-player');
+        const authModal = document.getElementById('auth-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const authAlert = document.getElementById('auth-alert');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+        const closeModal = document.getElementById('close-modal');
+        const userInfo = document.getElementById('user-info');
+        const nickname = document.getElementById('nickname');
+        const logoutBtn = document.getElementById('logout-btn');
+        const authButtons = document.getElementById('auth-buttons');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileUserInfo = document.getElementById('mobile-user-info');
+        const mobileNickname = document.getElementById('mobile-nickname');
+        const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+        const notLoginTip = document.getElementById('not-login-tip');
+        const uploadArea = document.getElementById('upload-area');
+        const musicUpload = document.getElementById('music-upload');
+        const dropArea = document.getElementById('drop-area');
+        const musicListEl = document.getElementById('music-list');
+        const currentTrackEl = document.getElementById('current-track');
+        const trackUploaderEl = document.getElementById('track-uploader');
+        const trackDurationEl = document.getElementById('track-duration');
+        const playProgressBar = document.getElementById('play-progress-bar');
+        const playPauseBtn = document.getElementById('play-pause');
+        const prevTrackBtn = document.getElementById('prev-track');
+        const nextTrackBtn = document.getElementById('next-track');
+        const volumeControl = document.getElementById('volume-control');
+        const volumeText = document.getElementById('volume-text');
+        const uploadAlert = document.getElementById('upload-alert');
+        const uploadProgress = document.getElementById('upload-progress');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const progressPercent = document.getElementById('progress-percent');
+        const progressHint = document.getElementById('progress-hint');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingText = document.getElementById('loading-text');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('section');
+
+        // ========== 工具函数 ==========
+        // 显示提示
+        function showAlert(el, message, type = 'success') {
+            el.innerHTML = message;
+            el.classList.remove('hidden', 'bg-success/20', 'bg-error/20', 'bg-warning/20', 
+                'border-success', 'border-error', 'border-warning');
+            
+            if (type === 'success') {
+                el.classList.add('bg-success/20', 'border', 'border-success', 'text-success');
+            } else if (type === 'error') {
+                el.classList.add('bg-error/20', 'border', 'border-error', 'text-error');
+            } else if (type === 'warning') {
+                el.classList.add('bg-warning/20', 'border', 'border-warning', 'text-warning');
+            }
+            
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        // 格式化时间
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 显示加载提示
+        function showLoading(text = '加载中...') {
+            loadingText.textContent = text;
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        // 隐藏加载提示
+        function hideLoading() {
+            loadingIndicator.classList.add('hidden');
+        }
+
+        // 请求头配置（带Token）
+        function getAuthHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        // ========== 认证相关 ==========
+        // 检查登录状态
+        async function checkLoginStatus() {
+            if (!token) return false;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    isLoggedIn = true;
+                    currentUser = result.data;
+                    updateUserUI();
+                    return true;
+                } else {
+                    // Token失效
+                    logout();
+                    return false;
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+                logout();
+                return false;
+            }
+        }
+
+        // 更新用户UI
+        function updateUserUI() {
+            if (isLoggedIn && currentUser) {
+                // 显示用户信息
+                userInfo.classList.remove('hidden');
+                mobileUserInfo.classList.remove('hidden');
+                nickname.textContent = currentUser.nickname || currentUser.username;
+                mobileNickname.textContent = currentUser.nickname || currentUser.username;
+                // 隐藏登录按钮
+                authButtons.classList.add('hidden');
+                // 显示上传区域，隐藏未登录提示
+                uploadArea.classList.remove('hidden');
+                notLoginTip.classList.add('hidden');
+            } else {
+                // 隐藏用户信息
+                userInfo.classList.add('hidden');
+                mobileUserInfo.classList.add('hidden');
+                // 显示登录按钮
+                authButtons.classList.remove('hidden');
+                // 隐藏上传区域，显示未登录提示
+                uploadArea.classList.add('hidden');
+                notLoginTip.classList.remove('hidden');
+            }
+        }
+
+        // 登录
+        async function login(username, password) {
+            try {
+                showLoading('登录中...');
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.success) {
+                    // 保存Token和用户信息
+                    token = result.data.token;
+                    currentUser = result.data.user;
+                    localStorage.setItem('music_token', token);
+                    isLoggedIn = true;
+                    
+                    // 更新UI
+                    updateUserUI();
+                    authModal.classList.add('hidden');
+                    showAlert(authAlert, '登录成功！', 'success');
+                    
+                    // 重新加载音乐列表
+                    await fetchMusicList();
+                } else {
+                    showAlert(authAlert, result.message, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showAlert(authAlert, `登录失败：${error.message}`, 'error');
+                console.error('登录失败:', error);
+            }
+        }
+
+        // 注册
+        async function register(username, password, nickname) {
+            try {
+                showLoading('注册中...');
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, nickname })
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.success) {
+                    showAlert(authAlert, '注册成功！请登录', 'success');
+                    // 切换到登录标签
+                    switchTab('login');
+                } else {
+                    showAlert(authAlert, result.message, 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showAlert(authAlert, `注册失败：${error.message}`, 'error');
+                console.error('注册失败:', error);
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            // 清除本地存储
+            localStorage.removeItem('music_token');
+            token = null;
+            isLoggedIn = false;
+            currentUser = null;
+            
+            // 更新UI
+            updateUserUI();
+            
+            // 提示
+            showAlert(uploadAlert, '已退出登录', 'success');
+            
+            // 重新加载音乐列表
+            fetchMusicList();
+        }
+
+        // 切换登录/注册标签
+        function switchTab(tab) {
+            if (tab === 'login') {
+                modalTitle.textContent = '用户登录';
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabLogin.classList.add('text-accent', 'border-b-2', 'border-accent');
+                tabLogin.classList.remove('text-gray-400');
+                tabRegister.classList.remove('text-accent', 'border-b-2', 'border-accent');
+                tabRegister.classList.add('text-gray-400');
+            } else {
+                modalTitle.textContent = '用户注册';
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                tabRegister.classList.add('text-accent', 'border-b-2', 'border-accent');
+                tabRegister.classList.remove('text-gray-400');
+                tabLogin.classList.remove('text-accent', 'border-b-2', 'border-accent');
+                tabLogin.classList.add('text-gray-400');
+            }
+        }
+
+        // ========== API请求 ==========
+        // 获取音乐列表
+        async function fetchMusicList() {
+            try {
+                showLoading('加载音乐列表...');
+                const response = await fetch(`${API_BASE_URL}/music-list`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    musicList = result.data;
+                    renderMusicList();
+                    document.getElementById('track-count').textContent = `共 ${musicList.length} 首音乐`;
+                } else {
+                    showAlert(uploadAlert, `获取列表失败：${result.message}`, 'error');
+                }
+            } catch (error) {
+                showAlert(uploadAlert, `获取列表失败：${error.message}`, 'error');
+                console.error('获取音乐列表失败:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 上传音乐
+        async function uploadMusicFile(file) {
+            if (!isLoggedIn) {
+                showAlert(uploadAlert, '请先登录后上传', 'warning');
+                return;
+            }
+            
+            try {
+                if (!file) return;
+                
+                showLoading('上传中...');
+                uploadProgress.classList.remove('hidden');
+                
+                const formData = new FormData();
+                formData.append('music', file);
+                
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}` // 仅带Token，不要设置Content-Type
+                    },
+                    body: formData,
+                    onUploadProgress: (progressEvent) => {
+                        const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                        progressBarFill.style.width = `${percent}%`;
+                        progressPercent.textContent = `${percent}%`;
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(uploadAlert, '音乐上传成功！所有用户都能看到啦', 'success');
+                    await fetchMusicList();
+                } else {
+                    showAlert(uploadAlert, `上传失败：${result.message}`, 'error');
+                }
+            } catch (error) {
+                showAlert(uploadAlert, `上传失败：${error.message}`, 'error');
+                console.error('上传音乐失败:', error);
+            } finally {
+                hideLoading();
+                uploadProgress.classList.add('hidden');
+                progressBarFill.style.width = '0%';
+                progressPercent.textContent = '0%';
+                musicUpload.value = '';
+            }
+        }
+
+        // 删除音乐
+        async function deleteMusic(id) {
+            if (!isLoggedIn) {
+                showAlert(uploadAlert, '请先登录', 'warning');
+                return;
+            }
+            
+            try {
+                if (!confirm('确定要删除这首音乐吗？删除后所有用户都将无法访问！')) return;
+                
+                showLoading('删除中...');
+                const response = await fetch(`${API_BASE_URL}/music/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert(uploadAlert, '音乐删除成功', 'success');
+                    // 如果删除的是当前播放的音乐
+                    if (currentTrackIndex !== -1 && musicList[currentTrackIndex].id === id) {
+                        pauseTrack();
+                        currentTrackIndex = -1;
+                        currentTrackEl.textContent = '未播放音乐';
+                        trackUploaderEl.classList.add('hidden');
+                        trackDurationEl.textContent = '00:00 / 00:00';
+                        playProgressBar.value = 0;
+                    }
+                    await fetchMusicList();
+                } else {
+                    showAlert(uploadAlert, `删除失败：${result.message}`, 'error');
+                }
+            } catch (error) {
+                showAlert(uploadAlert, `删除失败：${error.message}`, 'error');
+                console.error('删除音乐失败:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 下载音乐
+        function downloadMusic(music) {
+            try {
+                const a = document.createElement('a');
+                a.href = music.fileUrl;
+                a.download = music.originalName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showAlert(uploadAlert, `开始下载：${music.name}`, 'success');
+            } catch (error) {
+                showAlert(uploadAlert, `下载失败：${error.message}`, 'error');
+                console.error('下载音乐失败:', error);
+            }
+        }
+
+        // ========== 播放控制 ==========
+        // 加载曲目
+        async function loadTrack(index) {
+            if (index < 0 || index >= musicList.length) return;
+            
+            const music = musicList[index];
+            audioPlayer.src = music.fileUrl;
+            currentTrackEl.textContent = music.name;
+            trackUploaderEl.textContent = `上传者：${music.uploaderName}`;
+            trackUploaderEl.classList.remove('hidden');
+            
+            // 恢复播放进度
+            const savedProgress = localStorage.getItem(`play_progress_${music.id}`);
+            if (savedProgress && audioPlayer.duration) {
+                const progress = parseFloat(savedProgress);
+                if (progress > 5 && progress < audioPlayer.duration - 5) {
+                    audioPlayer.currentTime = progress;
+                    progressHint.classList.remove('hidden');
+                    setTimeout(() => progressHint.classList.add('hidden'), 3000);
+                }
+            }
+            
+            updatePlaybackStatus(false);
+            renderMusicList();
+        }
+
+        // 播放曲目
+        function playTrack() {
+            audioPlayer.play().catch(error => {
+                showAlert(uploadAlert, `播放失败：${error.message}`, 'error');
+                updatePlaybackStatus(false);
+            });
+            isPlaying = true;
+            updatePlaybackStatus(true);
+            startProgressAutoSave();
+        }
+
+        // 暂停曲目
+        function pauseTrack() {
+            audioPlayer.pause();
+            isPlaying = false;
+            updatePlaybackStatus(false);
+            stopProgressAutoSave();
+            saveCurrentProgress();
+        }
+
+        // 切换播放/暂停
+        function togglePlayPause() {
+            if (musicList.length === 0) {
+                showAlert(uploadAlert, '暂无音乐可播放', 'warning');
+                return;
+            }
+            
+            if (currentTrackIndex === -1) {
+                currentTrackIndex = 0;
+                loadTrack(currentTrackIndex);
+            }
+            
+            isPlaying ? pauseTrack() : playTrack();
+        }
+
+        // 上一曲
+        function playPreviousTrack() {
+            if (musicList.length === 0) return;
+            currentTrackIndex = (currentTrackIndex - 1 + musicList.length) % musicList.length;
+            loadTrack(currentTrackIndex);
+            playTrack();
+        }
+
+        // 下一曲
+        function playNextTrack() {
+            if (musicList.length === 0) return;
+            currentTrackIndex = (currentTrackIndex + 1) % musicList.length;
+            loadTrack(currentTrackIndex);
+            playTrack();
+        }
+
+        // 更新播放进度
+        function updatePlayProgress() {
+            const { currentTime, duration } = audioPlayer;
+            if (duration) {
+                const progress = (currentTime / duration) * 100;
+                playProgressBar.value = progress;
+                trackDurationEl.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+            }
+        }
+
+        // 设置播放进度
+        function setPlayProgress() {
+            const { duration } = audioPlayer;
+            if (duration) {
+                const progress = playProgressBar.value;
+                audioPlayer.currentTime = (progress / 100) * duration;
+                saveCurrentProgress();
+            }
+        }
+
+        // 设置音量
+        function setVolume() {
+            const volume = volumeControl.value;
+            audioPlayer.volume = volume;
+            volumeText.textContent = `${Math.round(volume * 100)}%`;
+        }
+
+        // 更新播放状态UI
+        function updatePlaybackStatus(playing) {
+            const playIcon = playPauseBtn.querySelector('i');
+            if (playing) {
+                playIcon.classList.remove('fa-play');
+                playIcon.classList.add('fa-pause');
+            } else {
+                playIcon.classList.remove('fa-pause');
+                playIcon.classList.add('fa-play');
+            }
+            renderMusicList();
+        }
+
+        // 保存播放进度
+        function saveCurrentProgress() {
+            if (currentTrackIndex === -1 || !musicList[currentTrackIndex]) return;
+            
+            const musicId = musicList[currentTrackIndex].id;
+            const progress = audioPlayer.currentTime;
+            localStorage.setItem(`play_progress_${musicId}`, progress.toString());
+        }
+
+        // 启动进度自动保存
+        function startProgressAutoSave() {
+            stopProgressAutoSave();
+            progressSaveTimer = setInterval(() => {
+                saveCurrentProgress();
+            }, 3000);
+        }
+
+        // 停止进度自动保存
+        function stopProgressAutoSave() {
+            if (progressSaveTimer) {
+                clearInterval(progressSaveTimer);
+                progressSaveTimer = null;
+            }
+        }
+
+        // ========== 渲染音乐列表 ==========
+        function renderMusicList() {
+            if (musicList.length === 0) {
+                musicListEl.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa-solid fa-music text-4xl mb-4 block"></i>
+                        暂无共享音乐，快来上传第一首吧！
+                    </div>
+                `;
+                return;
+            }
+            
+            musicListEl.innerHTML = '';
+            musicList.forEach((music, index) => {
+                const isOwner = isLoggedIn && currentUser && currentUser.id === music.uploaderId;
+                
+                const item = document.createElement('div');
+                item.className = `p-4 hover:bg-gray-700/50 transition-colors cursor-pointer ${index === currentTrackIndex ? 'bg-gray-700/30' : ''}`;
+                item.innerHTML = `
+                    <div class="flex flex-wrap justify-between items-center gap-3">
+                        <div class="flex items-center gap-3 flex-1 min-w-[200px]">
+                            <span class="text-gray-400 w-6 text-center">${index + 1}</span>
+                            <div>
+                                <h4 class="font-medium truncate max-w-[200px] md:max-w-[300px]">${music.name}</h4>
+                                <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
+                                    <span><i class="fa-solid fa-user mr-1"></i> ${music.uploaderName}</span>
+                                    <span><i class="fa-solid fa-file-audio mr-1"></i> ${music.format}</span>
+                                    <span><i class="fa-solid fa-database mr-1"></i> ${formatFileSize(music.size)}</span>
+                                    <span><i class="fa-solid fa-clock mr-1"></i> ${new Date(music.uploadTime).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="play-btn text-gray-400 hover:text-accent transition-colors p-1" data-index="${index}">
+                                <i class="fa-solid ${index === currentTrackIndex && isPlaying ? 'fa-pause' : 'fa-play'}"></i>
+                            </button>
+                            <button class="download-btn text-gray-400 hover:text-info transition-colors p-1" data-id="${music.id}">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                            ${isOwner ? `
+                                <button class="delete-btn text-gray-400 hover:text-error transition-colors p-1" data-id="${music.id}">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // 播放按钮
+                item.querySelector('.play-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(e.target.closest('.play-btn').dataset.index);
+                    if (idx === currentTrackIndex) {
+                        togglePlayPause();
+                    } else {
+                        currentTrackIndex = idx;
+                        loadTrack(currentTrackIndex);
+                        playTrack();
+                    }
+                });
+                
+                // 下载按钮
+                item.querySelector('.download-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = e.target.closest('.download-btn').dataset.id;
+                    const musicItem = musicList.find(m => m.id === id);
+                    if (musicItem) downloadMusic(musicItem);
+                });
+                
+                // 删除按钮（仅自己可见）
+                if (isOwner) {
+                    item.querySelector('.delete-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = e.target.closest('.delete-btn').dataset.id;
+                        deleteMusic(id);
+                    });
+                }
+                
+                // 点击列表项播放
+                item.addEventListener('click', () => {
+                    currentTrackIndex = index;
+                    loadTrack(currentTrackIndex);
+                    playTrack();
+                });
+                
+                musicListEl.appendChild(item);
+            });
+        }
+
+        // ========== 初始化 ==========
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查登录状态
+            await checkLoginStatus();
+            # 创建项目文件夹
+mkdir shared-music-space && cd shared-music-space
+# 初始化package.json
+npm init -y
+# 安装依赖
+npm install express multer cors uuid
+# 创建后端文件
+touch server.js
+# 创建前端文件
+touch index.html
+
+# 启动后端服务器
+node server.js
+# 前端直接用浏览器打开index.html（或用任何静态服务器）
+            //
