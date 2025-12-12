@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粉音阁 - 个人音乐空间</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">粉音阁</a>
+            <div class="nav-links">
+                <a href="index.html" class="active"><i class="fas fa-home"></i> 首页</a>
+                <a href="dashboard.html"><i class="fas fa-user"></i> 个人空间</a>
+                <a href="upload.html"><i class="fas fa-upload"></i> 上传音乐</a>
+                <a href="#"><i class="fas fa-heart"></i> 我的收藏</a>
+                <a href="#" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</a>
+            </div>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>登录到粉音阁</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="btn-pink">登录</button>
+                <p class="modal-footer-text">还没有账号？<a href="#" id="registerLink">立即注册</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 注册模态框 -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>注册粉音阁账号</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regUsername">用户名</label>
+                    <input type="text" id="regUsername" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">邮箱</label>
+                    <input type="email" id="regEmail" placeholder="请输入邮箱" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">密码</label>
+                    <input type="password" id="regPassword" placeholder="请输入密码" required>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">确认密码</label>
+                    <input type="password" id="regConfirmPassword" placeholder="请再次输入密码" required>
+                </div>
+                <button type="submit" class="btn-pink">注册</button>
+                <p class="modal-footer-text">已有账号？<a href="#" id="loginLink">立即登录</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <main class="container">
+        <!-- 音乐播放器部分 -->
+        <section class="player-section">
+            <div class="player-container">
+                <div class="player-header">
+                    <h1><i class="fas fa-music"></i> 当前播放</h1>
+                    <div class="player-controls">
+                        <button id="shuffleBtn" title="随机播放"><i class="fas fa-random"></i></button>
+                        <button id="repeatBtn" title="单曲循环"><i class="fas fa-redo"></i></button>
+                    </div>
+                </div>
+                
+                <div class="player-main">
+                    <div class="album-art">
+                        <img id="currentAlbumArt" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="专辑封面">
+                        <div class="album-art-overlay">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="player-info">
+                        <h2 id="currentSongTitle">夏日微风</h2>
+                        <p id="currentArtist">粉音阁用户</p>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBar"></div>
+                            <div class="time-info">
+                                <span id="currentTime">0:00</span>
+                                <span id="totalTime">3:45</span>
+                            </div>
+                        </div>
+                        
+                        <div class="player-buttons">
+                            <button id="prevBtn"><i class="fas fa-step-backward"></i></button>
+                            <button id="playBtn" class="play-btn"><i class="fas fa-play"></i></button>
+                            <button id="nextBtn"><i class="fas fa-step-forward"></i></button>
+                            <div class="volume-control">
+                                <i class="fas fa-volume-up"></i>
+                                <input type="range" id="volumeSlider" min="0" max="100" value="80">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="player-footer">
+                    <div class="song-actions">
+                        <button id="likeBtn" title="喜欢"><i class="far fa-heart"></i></button>
+                        <button id="shareBtn" title="分享"><i class="fas fa-share-alt"></i></button>
+                        <button id="downloadBtn" title="下载"><i class="fas fa-download"></i></button>
+                    </div>
+                    <div class="playlist-info">
+                        <span>播放列表: <span id="playlistCount">5</span> 首歌曲</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 音乐库部分 -->
+        <section class="library-section">
+            <div class="section-header">
+                <h2><i class="fas fa-headphones"></i> 音乐库</h2>
+                <div class="section-actions">
+                    <button class="btn-outline-pink" id="addToPlaylistBtn"><i class="fas fa-plus"></i> 添加到播放列表</button>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchMusic" placeholder="搜索音乐...">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="music-grid" id="musicGrid">
+                <!-- 音乐卡片将通过JavaScript动态生成 -->
+            </div>
+        </section>
+
+        <!-- 分享模态框 -->
+        <div id="shareModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>分享音乐</h2>
+                <div class="share-content">
+                    <div class="share-preview">
+                        <img id="shareAlbumArt" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="专辑封面">
+                        <div class="share-preview-info">
+                            <h3 id="shareSongTitle">夏日微风</h3>
+                            <p id="shareArtist">粉音阁用户</p>
+                        </div>
+                    </div>
+                    
+                    <div class="share-options">
+                        <div class="share-option">
+                            <h4>直链分享</h4>
+                            <div class="share-link-box">
+                                <input type="text" id="directLink" value="https://pinkmusic.example.com/song/123" readonly>
+                                <button id="copyLinkBtn" class="btn-small-pink">复制</button>
+                            </div>
+                            <p class="share-note">将此链接发送给朋友，他们可以直接播放这首歌</p>
+                        </div>
+                        
+                        <div class="share-option">
+                            <h4>嵌入代码</h4>
+                            <div class="share-link-box">
+                                <textarea id="embedCode" readonly>&lt;iframe src="https://pinkmusic.example.com/embed/123" width="300" height="80" frameborder="0"&gt;&lt;/iframe&gt;</textarea>
+                                <button id="copyEmbedBtn" class="btn-small-pink">复制</button>
+                            </div>
+                            <p class="share-note">将此代码嵌入到你的网站或博客中</p>
+                        </div>
+                        
+                        <div class="social-share">
+                            <h4>分享到社交媒体</h4>
+                            <div class="social-icons">
+                                <button class="social-btn facebook"><i class="fab fa-facebook-f"></i></button>
+                                <button class="social-btn twitter"><i class="fab fa-twitter"></i></button>
+                                <button class="social-btn wechat"><i class="fab fa-weixin"></i></button>
+                                <button class="social-btn link"><i class="fas fa-link"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>粉音阁</h3>
+                    <p>您的个人音乐空间，发现、分享、享受音乐之美。</p>
+                </div>
+                <div class="footer-section">
+                    <h4>快速链接</h4>
+                    <a href="index.html">首页</a>
+                    <a href="dashboard.html">个人空间</a>
+                    <a href="upload.html">上传音乐</a>
+                    <a href="#">关于我们</a>
+                </div>
+                <div class="footer-section">
+                    <h4>联系我</h4>
+                    <p><i class="fas fa-envelope"></i> contact@pinkmusic.com</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 粉音阁. 保留所有权利. | 基于GitHub Pages构建</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
