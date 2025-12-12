@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人空间 - 粉音阁</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 个人空间特定样式 */
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-info h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        .profile-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .dashboard-tabs {
+            display: flex;
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 30px;
+        }
+        
+        .tab-btn {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--light-text);
+            position: relative;
+            transition: var(--transition);
+        }
+        
+        .tab-btn.active {
+            color: var(--primary-color);
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--light-text);
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+        }
+        
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .music-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        
+        .music-table th, .music-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .music-table th {
+            background-color: #f9f9f9;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .music-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .music-table .music-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .music-table .music-cover {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .music-table .music-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .table-actions button {
+            background: none;
+            color: var(--light-text);
+            margin-right: 10px;
+            transition: var(--transition);
+        }
+        
+        .table-actions button:hover {
+            color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-stats {
+                justify-content: center;
+            }
+            
+            .dashboard-tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .music-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 (与主页面相同) -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">粉音阁</a>
+            <div class="nav-links">
+                <a href="index.html"><i class="fas fa-home"></i> 首页</a>
+                <a href="dashboard.html" class="active"><i class="fas fa-user"></i> 个人空间</a>
+                <a href="upload.html"><i class="fas fa-upload"></i> 上传音乐</a>
+                <a href="#"><i class="fas fa-heart"></i> 我的收藏</a>
+                <a href="#" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</a>
+            </div>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 个人空间主内容 -->
+    <main class="container">
+        <!-- 个人资料头部 -->
+        <section class="profile-header">
+            <div class="profile-avatar">
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="用户头像">
+            </div>
+            <div class="profile-info">
+                <h1 id="profileUsername">粉音阁用户</h1>
+                <p><i class="fas fa-envelope"></i> <span id="profileEmail">user@pinkmusic.com</span></p>
+                <p><i class="fas fa-calendar-alt"></i> 加入于 <span id="joinDate">2023年1月</span></p>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="musicCount">0</div>
+                        <div class="stat-label">上传音乐</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalLikes">0</div>
+                        <div class="stat-label">获赞总数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalPlays">0</div>
+                        <div class="stat-label">播放次数</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 选项卡 -->
+        <div class="dashboard-tabs">
+            <button class="tab-btn active" data-tab="myMusic">我的音乐</button>
+            <button class="tab-btn" data-tab="likedMusic">我喜欢的</button>
+            <button class="tab-btn" data-tab="playlists">播放列表</button>
+            <button class="tab-btn" data-tab="settings">账户设置</button>
+        </div>
+
+        <!-- 我的音乐 -->
+        <div id="myMusic" class="tab-content active">
+            <div class="section-header">
+                <h2><i class="fas fa-music"></i> 我的音乐</h2>
+                <a href="upload.html" class="btn-pink"><i class="fas fa-plus"></i> 上传新音乐</a>
+            </div>
+            
+            <div class="table-container">
+                <table class="music-table" id="myMusicTable">
+                    <thead>
+                        <tr>
+                            <th>歌曲</th>
+                            <th>艺术家</th>
+                            <th>上传日期</th>
+                            <th>播放次数</th>
+                            <th>喜欢</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myMusicTableBody">
+                        <!-- 表格内容将通过JavaScript动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="myMusicEmpty" class="empty-state" style="display: none;">
+                <i class="fas fa-music"></i>
+                <h3>暂无上传的音乐</h3>
+                <p>你还没有上传任何音乐，立即上传你的第一首作品吧！</p>
+                <a href="upload.html" class="btn-pink" style="margin-top: 20px;">上传音乐</a>
+            </div>
+        </div>
+
+        <!-- 我喜欢的音乐 -->
+        <div id="likedMusic" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-heart"></i> 我喜欢的音乐</h2>
+            </div>
+            
+            <div class="music-grid" id="likedMusicGrid">
+                <!-- 内容将通过JavaScript动态生成 -->
+            </div>
+            
+            <div id="likedMusicEmpty" class="empty-state">
+                <i class="fas fa-heart"></i>
+                <h3>暂无喜欢的音乐</h3>
+                <p>你还没有喜欢任何音乐，去发现喜欢的音乐吧！</p>
+                <a href="index.html" class="btn-pink" style="margin-top: 20px;">探索音乐</a>
+            </div>
+        </div>
+
+        <!-- 播放列表 -->
+        <div id="playlists" class="tab-content">
+            <div class="section-header">
+                <h2><i class="fas fa-list"></i> 我的播放列表</h2>
+                <button class="btn-pink" id="createPlaylistBtn"><i class="fas fa-plus"></i> 创建播放列表</button>
+            </div>
+            
+            <div class="music-grid" id="playlistsGrid">
+                <!-- 播放列表将通过JavaScript动态生成 -->
+            </div>
+            
+            <div id="playlistsEmpty" class="empty-state">
+                <i class="fas fa-list"></i>
+                <h3>暂无播放列表</h3>
+                <p>你还没有创建任何播放列表，立即创建一个吧！</p>
+                <button class="btn-pink" id="createPlaylistBtn2" style="margin-top: 20px;">创建播放列表</button>
+            </div>
+        </div>
+
+        <!-- 账户设置 -->
+        <div id="settings" class="tab-content">
+            <div class="settings-container">
+                <h2><i class="fas fa-cog"></i> 账户设置</h2>
+                
+                <form id="settingsForm" class="settings-form">
+                    <div class="form-section">
+                        <h3>基本信息</h3>
+                        <div class="form-group">
+                            <label for="displayName">显示名称</label>
+                            <input type="text" id="displayName" placeholder="请输入显示名称">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="userBio">个人简介</label>
+                            <textarea id="userBio" rows="3" placeholder="介绍一下你自己..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="userAvatar">头像</label>
+                            <div class="avatar-upload">
+                                <div class="avatar-preview" id="avatarPreview">
+                                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="当前头像">
+                                </div>
+                                <div class="avatar-upload-btn">
+                                    <button type="button" class="btn-outline-pink" id="uploadAvatarBtn">更换头像</button>
+                                    <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>隐私设置</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="showLikedMusic" checked>
+                            <label for="showLikedMusic">公开显示我喜欢的音乐</label>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="showPlaylists" checked>
+                            <label for="showPlaylists">公开显示我的播放列表</label>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="allowDownloads">
+                            <label for="allowDownloads">允许其他人下载我的音乐</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>通知设置</h3>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="emailNotifications" checked>
+                            <label for="emailNotifications">接收电子邮件通知</label>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="likeNotifications" checked>
+                            <label for="likeNotifications">当有人喜欢我的音乐时通知我</label>
+                        </div>
+                        
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="commentNotifications">
+                            <label for="commentNotifications">当有人评论我的音乐时通知我</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-pink">保存设置</button>
+                        <button type="button" class="btn-outline-pink" id="logoutBtn">退出登录</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 (与主页面相同) -->
+    <!-- 代码与主页面相同，为节省空间已省略 -->
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
